@@ -1,0 +1,14 @@
+# Environment Variables
+.env
+
+# VSCode Settings
+.vscode
+
+# Python Cache
+__pycache__
+
+# Temporary Output files
+outputs/
+
+# Temporary Upload files
+uploads/
