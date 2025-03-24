@@ -54,7 +54,12 @@ def process_task(task):
 
         download_file(task_data["rawFileUrl"], blend_path)
 
-        output_base = os.path.join(OUTPUT_DIR, f"{file_id}_output")
+        if task_data["taskType"] == "image":
+            output_filename = f"{task_data['userId']}_tile_{task_data['tileIndex']}"
+        elif task_data["taskType"] == "anim":
+            output_filename = f"{task_data['userId']}_frame_{task_data['frameStart']}_{task_data['frameEnd']}"
+
+        output_path = os.path.join(OUTPUT_DIR, output_filename)
 
         render_command = [
             "blender", "-b", blend_path,
@@ -65,7 +70,7 @@ def process_task(task):
             f"bpy.context.scene.render.resolution_x = {task_data['renderResolutionWidth']}; "
             f"bpy.context.scene.render.resolution_y = {task_data['renderResolutionHeight']}; "
             f"bpy.context.scene.render.resolution_percentage = {task_data['renderResolutionPercentage']}; ",
-            "-o", output_base,
+            "-o", output_path,
             "-F", "PNG", "-x", "1",
         ]
 
@@ -75,17 +80,10 @@ def process_task(task):
         elif task_data["taskType"] == "anim":
             render_command += ["-s", str(task_data["frameStart"]), "-e", str(task_data["frameEnd"]), "-a"]
 
-        process = subprocess.Popen(render_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        while process.poll() is None:
-            if stop_signal:
-                process.terminate()
-                print("Rendering aborted.")
-                return
-            time.sleep(1)
+        process = subprocess.run(render_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if process.returncode != 0:
-            print("Blender rendering failed:", process.stderr.read().decode())
+            print("Blender rendering failed:", process.stderr)
 
         print("Rendering complete for task:", task_data)
 
